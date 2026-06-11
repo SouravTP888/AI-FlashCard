@@ -1,13 +1,375 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse AI — Premium Flashcard & Study Deck Generator</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+  
+  <!-- Lucide Icons (Web component/Script load) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-theme">
+  <!-- Dynamic Gradient Background Blobs -->
+  <div class="bg-blur-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
 
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <i data-lucide="brain-circuit"></i>
+        </div>
+        <div class="logo-text">
+          <h1>Synapse<span>AI</span></h1>
+          <span class="tagline">Premium revision deck studio</span>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Connection Status Indicator -->
+        <div class="status-badge" id="apiStatusBadge">
+          <span class="status-dot green"></span>
+          <span class="status-text">Server Connected</span>
+        </div>
+        
+        <!-- Settings Trigger -->
+        <button class="btn btn-secondary btn-icon-only" id="btnSettings" title="Configure API Settings">
+          <i data-lucide="settings"></i>
+        </button>
+        
+        <!-- Dark/Light Mode Toggle -->
+        <button class="btn btn-secondary btn-icon-only" id="themeToggle" title="Toggle Theme">
+          <i data-lucide="sun" class="icon-sun"></i>
+          <i data-lucide="moon" class="icon-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="workspace-grid">
+      <!-- Input Panel (Left Column) -->
+      <section class="panel glass input-panel">
+        <div class="panel-header">
+          <div class="panel-title-area">
+            <span class="step-num">1</span>
+            <h2>Source Material</h2>
+          </div>
+          <button class="btn-text btn-clear-all" id="btnClearInput">
+            <i data-lucide="trash-2"></i> Clear
+          </button>
+        </div>
+        
+        <div class="panel-body">
+          <!-- Text Input Area -->
+          <div class="input-group">
+            <label for="lessonContent" class="input-label">Enter lesson content or notes</label>
+            <textarea 
+              id="lessonContent" 
+              placeholder="Paste your study materials, lecture transcript, textbook excerpts, or scientific topics here (minimum 50 words)..."
+              maxlength="10000"
+            ></textarea>
+            <div class="textarea-footer">
+              <span id="wordCounter">0 / 2,000 words</span>
+            </div>
+          </div>
+
+          <!-- File Upload Zone -->
+          <div class="file-upload-wrapper">
+            <div class="drag-drop-zone" id="dropZone">
+              <input type="file" id="fileInput" accept=".txt" class="hidden-file-input">
+              <i data-lucide="upload-cloud" class="upload-icon"></i>
+              <div class="upload-text">
+                <span class="upload-highlight">Click to upload</span> or drag & drop
+              </div>
+              <p class="upload-subtext">TXT files up to 2MB supported</p>
+            </div>
+            <!-- Upload Success Panel -->
+            <div class="uploaded-file-banner hidden" id="fileBanner">
+              <div class="file-info">
+                <i data-lucide="file-text" class="file-icon"></i>
+                <div class="file-meta">
+                  <span class="file-name" id="fileName">notes.txt</span>
+                  <span class="file-size" id="fileSize">14 KB</span>
+                </div>
+              </div>
+              <button class="btn-remove-file" id="btnRemoveFile" title="Remove File">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Generation Focus Options -->
+          <div class="options-grid">
+            <div class="option-card active" data-option="standard">
+              <div class="option-icon"><i data-lucide="sparkles"></i></div>
+              <div class="option-content">
+                <span class="option-title">Balanced</span>
+                <span class="option-desc">Ideal for general study</span>
+              </div>
+            </div>
+            
+            <div class="option-card" data-option="exam-prep">
+              <div class="option-icon"><i data-lucide="award"></i></div>
+              <div class="option-content">
+                <span class="option-title">Exam Focus</span>
+                <span class="option-desc">Active recall / depth</span>
+              </div>
+            </div>
+
+            <div class="option-card" data-option="summarized">
+              <div class="option-icon"><i data-lucide="zap"></i></div>
+              <div class="option-content">
+                <span class="option-title">Concise</span>
+                <span class="option-desc">Cheat sheets & facts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <button class="btn btn-primary btn-generate" id="btnGenerate">
+            <span class="btn-text">Generate Study Deck</span>
+            <span class="btn-loader hidden">
+              <span class="spinner"></span>
+              Generating...
+            </span>
+            <i data-lucide="arrow-right" class="btn-arrow"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Output Panel (Right Column) -->
+      <section class="panel glass output-panel">
+        <div class="panel-header">
+          <div class="panel-title-area">
+            <span class="step-num">2</span>
+            <h2>Revision Deck</h2>
+          </div>
+          
+          <div class="panel-header-actions hidden" id="outputActions">
+            <button class="btn btn-secondary btn-sm" id="btnCopyAll" title="Copy entire content as text">
+              <i data-lucide="copy"></i> Copy All
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btnDownloadJson" title="Download data as JSON file">
+              <i data-lucide="download"></i> Download JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Tabs Navigation -->
+        <div class="tabs-nav-wrapper hidden" id="tabsNavigation">
+          <nav class="tabs-navigation">
+            <button class="tab-btn active" data-tab="flashcards">
+              <i data-lucide="layers"></i> Flashcards <span class="tab-count" id="flashcardCount">0</span>
+            </button>
+            <button class="tab-btn" data-tab="concepts">
+              <i data-lucide="bookmark-check"></i> Key Concepts <span class="tab-count" id="conceptCount">0</span>
+            </button>
+            <button class="tab-btn" data-tab="revision">
+              <i data-lucide="list-checks"></i> Revision Cards <span class="tab-count" id="revisionCount">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Scrollable Workspace Body -->
+        <div class="panel-body output-scroll-area">
+          <!-- State: Empty Workspace -->
+          <div class="state-container active" id="stateEmpty">
+            <div class="empty-illustration">
+              <div class="circle-glow">
+                <i data-lucide="book-open" class="illustration-icon"></i>
+              </div>
+            </div>
+            <h3>Ready to synthesize</h3>
+            <p>Paste notes or upload a text file, choose a customization preset, and hit generate. Synapse AI will construct a high-yield interactive revision environment in seconds.</p>
+            <p style="margin-top: 1rem; font-size: 0.85rem;" id="demoPromptText">Or experience it immediately with a <button class="btn-link" id="btnLoadDemo">Demo Study Deck</button>.</p>
+          </div>
+
+          <!-- State: Loading / Skeletons -->
+          <div class="state-container hidden" id="stateLoading">
+            <div class="loading-wrapper">
+              <div class="progress-bar-container">
+                <div class="progress-fill" id="loadingProgress"></div>
+              </div>
+              <p class="loading-status-text" id="loadingStatusText">Analyzing concepts...</p>
+              
+              <!-- Skeletons mapping Flashcard view -->
+              <div class="skeleton-grid">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- State: Results Deck -->
+          <div class="state-container hidden" id="stateResults">
+            <!-- Content Pane 1: Flashcards -->
+            <div class="tab-pane active" id="paneFlashcards">
+              <div class="deck-mode-toolbar">
+                <span class="deck-mode-info">Interactive 3D Cards</span>
+                <div class="deck-controls">
+                  <button class="btn btn-secondary btn-xs" id="btnFlipAll" title="Flip all cards to answers or questions">
+                    <i data-lucide="refresh-cw"></i> Flip All
+                  </button>
+                  <div class="view-mode-toggles">
+                    <button class="btn btn-secondary btn-icon-only btn-xs active" id="viewModeGrid" title="Grid View">
+                      <i data-lucide="grid"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-icon-only btn-xs" id="viewModeCarousel" title="Carousel / Study Mode">
+                      <i data-lucide="presentation"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- View 1: Grid Layout -->
+              <div class="flashcard-grid" id="flashcardsGridContainer">
+                <!-- Dynamically populated -->
+              </div>
+
+              <!-- View 2: Carousel Study Mode -->
+              <div class="flashcard-carousel hidden" id="flashcardsCarouselContainer">
+                <div class="carousel-stage">
+                  <button class="carousel-nav btn-prev" id="btnPrevCard" title="Previous Card">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  
+                  <div class="carousel-card-wrapper" id="carouselCardPlaceholder">
+                    <!-- Dynamic Single Flashcard -->
+                  </div>
+                  
+                  <button class="carousel-nav btn-next" id="btnNextCard" title="Next Card">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                </div>
+                <div class="carousel-indicators-area">
+                  <div class="carousel-progress-track">
+                    <div class="carousel-progress-bar" id="carouselProgressBar"></div>
+                  </div>
+                  <span class="carousel-index" id="carouselCardIndex">Card 1 of 10</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Pane 2: Key Concepts -->
+            <div class="tab-pane" id="paneConcepts">
+              <div class="pane-intro">
+                <p>Core terminology and definitions extracted from your lesson text. Click any card to expand details.</p>
+              </div>
+              <div class="concepts-grid" id="conceptsContainer">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Content Pane 3: Revision Bullet Summaries -->
+            <div class="tab-pane" id="paneRevision">
+              <div class="pane-intro">
+                <p>High-impact bullet summaries for quick scanning, reviews, and cheat sheets.</p>
+              </div>
+              <div class="revision-notes-container">
+                <ul class="revision-notes-list" id="revisionContainer">
+                  <!-- Dynamically populated -->
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Settings / API Configuration Modal -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal glass">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i data-lucide="sliders"></i>
+          <h3>API Settings</h3>
+        </div>
+        <button class="btn-close-modal" id="btnCloseSettings">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="settings-desc">Choose how the application communicates with the Gemini AI model. You can run locally through the server or connect directly from your browser.</p>
+        
+        <!-- Connection Mode Toggle -->
+        <div class="settings-group">
+          <label class="input-label">Connection Mode</label>
+          <div class="connection-mode-selector">
+            <button class="mode-tab active" id="modeServer">
+              <i data-lucide="server"></i>
+              <div>
+                <strong>Local Server</strong>
+                <span>Proxies calls via Node backend</span>
+              </div>
+            </button>
+            <button class="mode-tab" id="modeDirect">
+              <i data-lucide="shield-check"></i>
+              <div>
+                <strong>Direct Client</strong>
+                <span>Connect directly from browser (requires key)</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Direct API Input Panel -->
+        <div class="settings-group hidden" id="directKeyConfig">
+          <label for="geminiApiKey" class="input-label">Gemini API Key</label>
+          <div class="api-key-input-wrapper">
+            <input 
+              type="password" 
+              id="geminiApiKey" 
+              placeholder="AIzaSy..."
+              autocomplete="new-password"
+            >
+            <button class="btn-toggle-key-visibility" id="btnToggleKeyVisibility" title="Toggle visibility">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <span class="help-text">Your API Key is saved locally in your browser's <code>localStorage</code> and never transmitted elsewhere. Get a key from the <a href="https://aistudio.google.com/" target="_blank" class="external-link">Google AI Studio <i data-lucide="external-link"></i></a>.</span>
+        </div>
+        
+        <!-- Status Display in Modal -->
+        <div class="settings-info-card">
+          <div class="info-row">
+            <span class="info-label">Active Model:</span>
+            <span class="info-value font-mono">gemini-2.5-flash</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Key Status:</span>
+            <span class="info-value" id="modalKeyStatus"><span class="badge badge-warning">Not Configured</span></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnResetSettings">Reset defaults</button>
+        <button class="btn btn-primary" id="btnSaveSettings">Save Config</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Main JavaScript File -->
+  <script type="module" src="/script.js"></script>
+</body>
+</html>
