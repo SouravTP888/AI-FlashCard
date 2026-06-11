@@ -1,0 +1,6 @@
+{
+  "name": "AI Flashcard Generator",
+  "description": "Generate AI-powered study guides, flashcards, key concepts, and revision notes from study materials and lesson notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
